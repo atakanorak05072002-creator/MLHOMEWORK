@@ -29,6 +29,49 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Generate CI sample data
+        run: |
+          python - <<'PY'
+          import csv
+          import gzip
+          from pathlib import Path
+
+          path = Path("tests/data/train_sample.gz")
+          path.parent.mkdir(parents=True, exist_ok=True)
+          header = [
+              "id",
+              "click",
+              "site_id",
+              "app_id",
+              "site_domain",
+              "app_domain",
+              "device_type",
+              "device_conn_type",
+          ]
+
+          rows = []
+          for i in range(200):
+              click = 1 if i % 10 == 0 else 0
+              rows.append(
+                  [
+                      i,
+                      click,
+                      f"s{i % 5}",
+                      f"a{i % 7}",
+                      f"sd{i % 11}",
+                      f"ad{i % 13}",
+                      f"d{i % 3}",
+                      f"dc{i % 2}",
+                  ]
+              )
+
+          with gzip.open(path, "wt", newline="") as f:
+              writer = csv.writer(f)
+              writer.writerow(header)
+              writer.writerows(rows)
+          print(f"Wrote {path} with {len(rows)} rows")
+          PY
+
       - name: Prepare runtime (mlflow + artifacts)
         run: |
           mkdir -p mlruns artifacts
